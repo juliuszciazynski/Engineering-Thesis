@@ -1,0 +1,25 @@
+UI:
+3. Zapisywanie/Eksport wyników: Prosty przycisk, który pozwalałby użytkownikowi pobrać wygenerowaną listę rekomendacji jako plik CSV.
+CHATBOT
+1."help" nie działa
+2. na przywitanie chcę już wiedzieć co robi chat bot (o co można się go spytać)
+3. what is hdi nie działa
+4. informacje z mojego modelu "tell me about"
+5. dodanie najpopularniejszej atrakcji z danej destynacji
+6. hotele działają super loty też, tell me about warsaw też
+
+Testy całgo frontendu i modelu
+I dla vacation i dla emigration
+1. Przetestowanie modelu z tylko 1 każdą kategorią
+2. przetestowanie połączeń kategorii czy mają sens wyniki
+3. czy exclusion działa
+4. czy month of arrival i pogoda ma znaczenie
+5. czy budget ma znaczenie
+6. czy types of attractions ma znaczenie
+7. wszystkie funkcje chatbota
+8. czy mapka top 10 działa
+9. czy wytłumaczenia działają
+10. czy linki prowadzące do innych stron działają
+
+
+
