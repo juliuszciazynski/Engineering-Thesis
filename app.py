@@ -17,6 +17,7 @@ from recommender import (
 #WELCOME PAGE
 st.set_page_config(page_title="Travel Recommender", page_icon="✈️", layout="wide")
 
+
 # --- Preset Dictionaries ---
 VACATION_PRESETS = {
     "Balanced": { 'weather': 0.25, 'budget': 0.15, 'attractions_quantity': 0.10, 'attractions_quality': 0.15, 'safety': 0.10, 'attractions_popularity': 0.05, 'english_level': 0.05, 'known_languages': 0.05, 'distance': 0.05, 'cuisine_quality': 0.10 },
@@ -60,6 +61,7 @@ def load_data():
         df_dest = pd.read_sql_query("SELECT * FROM destinations", conn)
         df_attr = pd.read_sql_query("SELECT * FROM attractions", conn)
         conn.close()
+        # Handle the different possible names for the 'Country' column
         country_col_name = 'Country_x' if 'Country_x' in df_dest.columns else 'Country'
         df_dest.rename(columns={country_col_name: 'Country'}, inplace=True, errors='ignore')
         return df_dest, df_attr
@@ -101,35 +103,39 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
     destination = find_entity_in_question(question, raw_destinations)
     country = find_entity_in_question(question, all_countries) if not destination else None
     
+    # Rule 1: Greetings
     if any(word in question_lower for word in ["hello", "hi", "hey"]):
+        return "Hello, welcome to Travel Recommender! Ask me about a destination, the model, flights, or whatever you want! If you are not sure, please type **'help'**!"
+
+    # Rule 2: Help Command
+    if "help" in question_lower:
         return """
-        Hello! I'm your travel assistant. I can help you with a few things:
-        - **Find data**: Ask me "What is the HDI for Germany?" or "Weather in Rome in May?".
-        - **Explain concepts**: Ask me "How do weights work?" or "What is HDI?".
-        - **Find deals & info**: Ask me "Show me flights to Paris", "Find hotels in Barcelona" or "Tell me about Warsaw".
-        - **Find top attractions**: Ask "What is the most popular attraction in London?".
+        I can help you with a few things. Try asking:
+        - **Find data**: "What is the HDI for Germany?" or "Weather in Rome in May?". I can find data for any metric used in the model.
+        - **Explain concepts**: "How do weights work?", "How does the model work?", or "What is HDI?".
+        - **Find top attractions**: "What is the most popular attraction in London?".
+        - **Get a summary**: "Tell me about Warsaw".
+        - **Find deals & info**: "Show me flights to Paris" or "Find hotels in Barcelona".
         """
-    if "how do weights work" in question_lower:
-        return "The weights are like sliders on a DJ's mixing console. A higher weight gives a factor more influence on the final recommendation score, allowing you to tailor the results to what's most important to you."
-    if "how does the model work" in question_lower:
-        return "The model uses a Weighted Scoring System. For each destination, it calculates a score (from 0 to 1) for various factors like weather, budget, and safety. Each score is then multiplied by its user-defined weight. The final score is the sum of all these weighted scores, and the top 10 destinations are recommended."
-    if "what is hdi" in question_lower:
-        return "The **Human Development Index (HDI)** is a summary measure of average achievement in key dimensions of human development: a long and healthy life, being knowledgeable and having a decent standard of living."
     
+    # First, check for an entity (destination or country)
     entity = destination if destination else country
     if entity:
         if destination: entity_data = dest_data[dest_data['Destination'] == entity]
         else: entity_data = dest_data[dest_data['Country'] == entity]
         if entity_data.empty: return f"Sorry, I couldn't find any data for {entity}."
 
+        # Rule 5: Most popular attraction
         if "most popular" in question_lower and "attraction" in question_lower:
             if destination and not attr_data.empty:
                 top_attraction = attr_data[attr_data['Destination'] == destination].sort_values(by='No_votes', ascending=False).iloc[0]
                 name = top_attraction['Name']
                 url = f"https://www.google.com/search?q={name.replace(' ', '+')}"
-                return f"The most popular attraction in **{destination}** is **{name}**.\n\n[Search for more info here]({url})"
+                return f"The most popular attraction in **{destination}** (based on number of votes) is **{name}**.\n\n[Search for more info here]({url})"
             else:
                 return "Sorry, I can only find the most popular attraction for a specific destination, not an entire country."
+        
+        # Rule 4: "Tell me about"
         if "tell me about" in question_lower:
             data_row = entity_data.iloc[0]
             info = f"### Summary for **{entity}**:\n"
@@ -140,6 +146,8 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
             url = f"https://en.wikipedia.org/wiki/{entity.replace(' ', '_')}"
             info += f"\n[Read more on Wikipedia]({url})"
             return info
+
+        # Rule 1: Data lookup from the database
         data_keywords = {"hdi": ("HDI_Value_Latest", ".3f"),"safety": ("Safety_Index", ".2f"),"cost of living": ("CostofLivingPlusRentIndex", ".2f"),"purchasing power": ("LocalPurchasingPowerIndex", ".2f"),"unemployment": ("Unemployment_Rate_National_Latest_Pct", ".2f"),"inflation": ("Inflation_Rate_National_Latest_Pct", ".2f"),"life expectancy": ("Life_Expectancy", ".2f"),"cuisine rank": ("Cuisine_Rank", ".0f")}
         for keyword, (col, fmt) in data_keywords.items():
             if keyword in question_lower and col in entity_data.columns:
@@ -153,6 +161,8 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
                         weather = entity_data[month_abbr].iloc[0]
                         return f"The weather in **{entity}** in {month} is typically **{weather}**."
             return "Please specify a month to get the weather forecast (e.g., 'weather in Paris in July')."
+        
+        # Rule 1: Link generation
         if "flight" in question_lower:
             url = f"https://www.google.com/flights?q=flights+from+Lodz+to+{entity.replace(' ', '+')}"
             return f"Sure, here is a link to search for flights to {entity}:\n[Click here for flights]({url})"
@@ -162,6 +172,16 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
         if "wikipedia" in question_lower:
             url = f"https://en.wikipedia.org/wiki/{entity.replace(' ', '_')}"
             return f"Here is the Wikipedia page for {entity}:\n[Read more on Wikipedia]({url})"
+            
+    # Rule 3: Explanations (checked only if no entity was found)
+    if "how do weights work" in question_lower:
+        return "The weights are like sliders on a DJ's mixing console. A higher weight gives a factor more influence on the final recommendation score, allowing you to tailor the results to what's most important to you."
+    if "how does the model work" in question_lower:
+        return "The model uses a Weighted Scoring System. For each destination, it calculates a score (from 0 to 1) for various factors like weather, budget, and safety. Each score is then multiplied by its user-defined weight. The final score is the sum of all these weighted scores, and the top 10 destinations are recommended."
+    if "what is hdi" in question_lower:
+        return "The **Human Development Index (HDI)** is a summary measure of average achievement in key dimensions of human development: a long and healthy life, being knowledgeable and having a decent standard of living."
+        
+    # Default response
     return "Sorry, I don't understand that question. Try asking 'help' to see what I can do."
 
 def display_recommendations(recommendations_df, all_data_df):
@@ -205,6 +225,7 @@ def display_recommendations(recommendations_df, all_data_df):
                 st.warning("Could not find latitude/longitude columns in the database to display the map.")
     else:
         st.error("No recommendations found for the given criteria.")
+
 
 # --- Main App ---
 st.title('Personal Travel Recommender')
@@ -293,6 +314,7 @@ if not main_df.empty:
                 w_distance_em = st.slider("Weight: Distance", 0.0, 1.0, weights_em['distance'], 0.05, key='w_em_dist', help="Importance of the road distance from Lodz, Poland (closer is better).")
                 w_weather_em = st.slider("Weight: Weather", 0.0, 1.0, weights_em['weather'], 0.05, key='w_em_weather', help="Importance of a pleasant year-round climate.")
                 w_known_lang_em = st.slider("Weight: Known Languages", 0.0, 1.0, weights_em['known_languages'], 0.05, key='w_em_lang', help="Controls the bonus for destinations where you speak the local language.")
+        
         if 'emigration_recs' not in st.session_state:
             st.session_state.emigration_recs = None
         if st.button('Find the best place to live!'):
@@ -302,6 +324,7 @@ if not main_df.empty:
                 recommendations = get_emigration_recommendations(emigration_preferences, emigration_weights)
                 st.session_state.emigration_recs = recommendations
             st.success('Done!')
+        
         if st.session_state.emigration_recs is not None:
             display_recommendations(st.session_state.emigration_recs, main_df)
 
@@ -310,7 +333,7 @@ if not main_df.empty:
     st.header("🤖 Travel Assistant Chatbot")
 
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": "Hello! Ask me something about a destination."}]
+        st.session_state.messages = [{"role": "assistant", "content": "Hello, welcome to Travel Recommender, ask me about a destination, model, flights, whatever you want!. If you are not sure, please type 'help'!"}]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -322,7 +345,7 @@ if not main_df.empty:
             st.markdown(prompt)
         with st.spinner("Thinking..."):
             raw_destination_names = [d.split(' - ')[-1] for d in destination_options]
-            response = get_chatbot_response(prompt, main_df, raw_destination_names, country_options, month_options)
+            response = get_chatbot_response(prompt, main_df, attr_df, raw_destination_names, country_options, month_options)
             st.session_state.messages.append({"role": "assistant", "content": response})
             with st.chat_message("assistant"):
                 st.markdown(response)

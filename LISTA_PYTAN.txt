@@ -1,12 +1,9 @@
 UI:
 3. Zapisywanie/Eksport wyników: Prosty przycisk, który pozwalałby użytkownikowi pobrać wygenerowaną listę rekomendacji jako plik CSV.
 CHATBOT
-1."help" nie działa
-2. na przywitanie chcę już wiedzieć co robi chat bot (o co można się go spytać)
-3. what is hdi nie działa
-4. informacje z mojego modelu "tell me about"
-5. dodanie najpopularniejszej atrakcji z danej destynacji
-6. hotele działają super loty też, tell me about warsaw też
+1."help" nie działa, chciałbym by po wpisaniu help była szczegółowa instrukcja o co można się spytać chatbota. oprócz tego co już chatbot oferuje, powinien jeszcze móc wyjaśnić jak działa model
+2. na przywitanie chcę, żeby chatbot również oferował wpisanie "help", żeby zobaczyć co może zrobić
+3. informacje z mojego modelu "tell me about", no trochę out of context informacje (np. live cost coefficient 100, nic nikomu nie mówi), dodanie najpopularniejszej atrakcji z danej destynacji
 
 Testy całgo frontendu i modelu
 I dla vacation i dla emigration
