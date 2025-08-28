@@ -1,4 +1,3 @@
-#~~~~~~~~~~~~~~~~~~~~~~~~~~UI~~~~~~~~~~~~~~~~~~~~~~~~~~#
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -6,7 +5,7 @@ import re
 import folium
 from streamlit_folium import st_folium
 
-#IMPORTING FUNCTIONS AND CONSTANTS
+#IMPORTING FUNCTIONS AND CONSTANTS from other FILES
 from recommender import (
     get_vacation_recommendations, 
     get_emigration_recommendations, 
@@ -20,20 +19,23 @@ st.set_page_config(page_title="Travel Recommender", page_icon="✈️", layout="
 
 # --- Preset Dictionaries ---
 VACATION_PRESETS = {
-    "Balanced": { 'weather': 0.25, 'budget': 0.15, 'attractions_quantity': 0.10, 'attractions_quality': 0.15, 'safety': 0.10, 'attractions_popularity': 0.05, 'english_level': 0.05, 'known_languages': 0.05, 'distance': 0.05, 'cuisine_quality': 0.10 },
-    "Budget Explorer": { 'weather': 0.4, 'budget': 0.5, 'attractions_quantity': 0.1, 'attractions_quality': 0.05, 'safety': 0.1, 'attractions_popularity': 0.0, 'english_level': 0.0, 'known_languages': 0.0, 'distance': 0.1, 'cuisine_quality': 0.05 },
-    "Culture & Cuisine Connoisseur": { 'weather': 0.1, 'budget': 0.0, 'attractions_quantity': 0.2, 'attractions_quality': 0.4, 'safety': 0.05, 'attractions_popularity': 0.1, 'english_level': 0.0, 'known_languages': 0.0, 'distance': 0.0, 'cuisine_quality': 0.4 },
-    "Off-Grid Adventurer": { 'weather': 0.3, 'budget': 0.1, 'attractions_quantity': 0.3, 'attractions_quality': 0.1, 'safety': 0.3, 'attractions_popularity': -0.5, 'english_level': 0.0, 'known_languages': 0.0, 'distance': 0.1, 'cuisine_quality': 0.0 }
+    "Balanced": { 'weather': 0.3, 'budget': 0.3, 'attractions_quantity': 0.3, 'attractions_quality': 0.30, 'safety': 0.20, 'attractions_popularity': 0.10, 'english_level': 0.25, 'known_languages': 0.20, 'distance': 0.05, 'cuisine_quality': 0.15 },
+    "Budget Explorer": { 'weather': 0.3, 'budget': 0.6, 'attractions_quantity': 0.3, 'attractions_quality': 0.1, 'safety': 0.1, 'attractions_popularity': 0.05, 'english_level': 0.2, 'known_languages': 0.3, 'distance': 0.15, 'cuisine_quality': 0.20 },
+    "Culture & Cuisine Connoisseur": { 'weather': 0.1, 'budget': 0.0, 'attractions_quantity': 0.2, 'attractions_quality': 0.5, 'safety': 0.20, 'attractions_popularity': 0.1, 'english_level': 0.2, 'known_languages': 0.3, 'distance': 0.0, 'cuisine_quality': 0.6 },
+    "Off-Grid Adventurer": { 'weather': 0.3, 'budget': 0.2, 'attractions_quantity': 0.3, 'attractions_quality': 0.1, 'safety': 0.1, 'attractions_popularity': -0.5, 'english_level': 0.2, 'known_languages': 0.0, 'distance': 0.0, 'cuisine_quality': 0.1},
+    "Family Vacation": { 'weather': 0.5, 'budget': 0.25, 'attractions_quantity': 0.5, 'attractions_quality': 0.4, 'safety': 0.3, 'attractions_popularity': 0.4, 'english_level': 0.05, 'known_languages': 0.05, 'distance': 0.2, 'cuisine_quality': 0.3 }
 }
+
 
 EMIGRATION_PRESETS = {
-    "Balanced": { 'cost_of_living': 0.20, 'purchasing_power': 0.20, 'safety': 0.10, 'english_level': 0.10, 'hdi': 0.10, 'unemployment': 0.10, 'inflation': 0.05, 'life_expectancy': 0.05, 'distance': 0.05, 'weather': 0.05, 'known_languages': 0.0 },
-    "Young Professional": { 'cost_of_living': 0.15, 'purchasing_power': 0.4, 'safety': 0.05, 'english_level': 0.15, 'hdi': 0.05, 'unemployment': 0.2, 'inflation': 0.0, 'life_expectancy': 0.0, 'distance': 0.0, 'weather': 0.0, 'known_languages': 0.0 },
-    "The Family": { 'cost_of_living': 0.2, 'purchasing_power': 0.1, 'safety': 0.3, 'english_level': 0.05, 'hdi': 0.2, 'unemployment': 0.05, 'inflation': 0.1, 'life_expectancy': 0.2, 'distance': 0.0, 'weather': 0.0, 'known_languages': 0.0 },
-    "Digital Nomad": { 'cost_of_living': 0.5, 'purchasing_power': 0.0, 'safety': 0.2, 'english_level': 0.1, 'hdi': 0.0, 'unemployment': 0.0, 'inflation': 0.1, 'life_expectancy': 0.0, 'distance': 0.0, 'weather': 0.1, 'known_languages': 0.0 }
+    "Balanced": { 'cost_of_living': 0.20, 'purchasing_power': 0.20, 'safety': 0.10, 'english_level': 0.10, 'hdi': 0.10, 'unemployment': 0.10, 'inflation': 0.05, 'life_expectancy': 0.05, 'distance': 0.05, 'weather': 0.05, 'known_languages': 0.05 },
+    "Young Professional": { 'cost_of_living': 0.15, 'purchasing_power': 0.5, 'safety': 0.05, 'english_level': 0.3, 'hdi': 0.05, 'unemployment': 0.2, 'inflation': 0.1, 'life_expectancy': 0.0, 'distance': 0.0, 'weather': 0.0, 'known_languages': 0.4 },
+    "The Family": { 'cost_of_living': 0.3, 'purchasing_power': 0.1, 'safety': 0.3, 'english_level': 0.05, 'hdi': 0.2, 'unemployment': 0.2, 'inflation': 0.2, 'life_expectancy': 0.2, 'distance': 0.1, 'weather': 0.1, 'known_languages': 0.0 },
+    "Digital Nomad": { 'cost_of_living': 0.5, 'purchasing_power': 0.0, 'safety': 0.2, 'english_level': 0.3, 'hdi': 0.0, 'unemployment': 0.0, 'inflation': 0.1, 'life_expectancy': 0.0, 'distance': 0.0, 'weather': 0.3, 'known_languages': 0.0 },
+    "Retiree": { 'cost_of_living': 0.4, 'purchasing_power': 0.1, 'safety': 0.3, 'english_level': 0.05, 'hdi': 0.3, 'unemployment': 0.0, 'inflation': 0.1, 'life_expectancy': 0.4, 'distance': 0.0, 'weather': 0.4, 'known_languages': 0.0 }
 }
 
-# --- Słownik z opisami kategorii ---
+#--- Attraction Descriptions ---
 ATTRACTION_DESCRIPTIONS = {
     "Historic_Heritage": "Castles, ruins, historic sites, monuments, and museums focused on history.",
     "Religion": "Churches, cathedrals, mosques, synagogues, and other religious sites.",
@@ -48,7 +50,8 @@ ATTRACTION_DESCRIPTIONS = {
     "Science_Technology": "Science museums, observatories, and sites of technological interest.",
     "Beach": "Specifically sandy or pebble beaches for recreation.",
     "Mountains_and_trails": "Mountain ranges, hiking trails, and related activities.",
-    "Landmark": "Famous points of interest, towers, observation decks, and iconic structures."
+    "Landmark": "Famous points of interest, towers, observation decks, and iconic structures.",
+    "Top_200_Popular": "A collection of the top 200 most popular attractions in Europe, based on number of votes on TripAdvisor."
 }
 
 
@@ -61,7 +64,7 @@ def load_data():
         df_dest = pd.read_sql_query("SELECT * FROM destinations", conn)
         df_attr = pd.read_sql_query("SELECT * FROM attractions", conn)
         conn.close()
-        # Handle the different possible names for the 'Country' column
+        # Renaming 'Country_x' to 'Country' if it exists
         country_col_name = 'Country_x' if 'Country_x' in df_dest.columns else 'Country'
         df_dest.rename(columns={country_col_name: 'Country'}, inplace=True, errors='ignore')
         return df_dest, df_attr
@@ -103,11 +106,33 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
     destination = find_entity_in_question(question, raw_destinations)
     country = find_entity_in_question(question, all_countries) if not destination else None
     
-    # Rule 1: Greetings
     if any(word in question_lower for word in ["hello", "hi", "hey"]):
-        return "Hello, welcome to Travel Recommender! Ask me about a destination, the model, flights, or whatever you want! If you are not sure, please type **'help'**!"
+        return """
+    ### Welcome to the Personal Travel Recommender!
 
-    # Rule 2: Help Command
+    Here's a quick guide on how to use the application:
+
+    **1. Choose Your Goal in the Sidebar**
+    * **Vacation:** For planning short-term trips. This mode focuses on factors like budget, attractions, and weather for a specific month.
+    * **Emigration:** For evaluating long-term living prospects. This mode uses year-round climate data and focuses on socio-economic factors like cost of living, safety, and purchasing power.
+
+    **2. Define Your Preferences**
+    * Use the widgets in the sidebar to tell the model what you're looking for. The options will change depending on the goal you've selected.
+
+    **3. Fine-Tune the Model (Optional)**
+    * In the "Adjust Model Weights" section, you can load a preset "persona" (like 'Budget Explorer' or 'The Family') to automatically set the importance of each factor. You can then fine-tune any of the sliders yourself.
+
+    **4. Get Recommendations**
+    * Once you're ready, click the "Find..." button to generate your personalized list of the top 10 destinations.
+
+    **5. Ask Me Anything!**
+    * You can also use me, the chatbot, to ask specific questions like "What is the safety in Berlin?", "Tell me about Rome", or "Show me flights to Paris".
+
+    **Ready to start? Select your goal in the sidebar!**
+    """
+
+
+    #Help command
     if "help" in question_lower:
         return """
         I can help you with a few things. Try asking:
@@ -125,7 +150,7 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
         else: entity_data = dest_data[dest_data['Country'] == entity]
         if entity_data.empty: return f"Sorry, I couldn't find any data for {entity}."
 
-        # Rule 5: Most popular attraction
+        # Most popular attraction
         if "most popular" in question_lower and "attraction" in question_lower:
             if destination and not attr_data.empty:
                 top_attraction = attr_data[attr_data['Destination'] == destination].sort_values(by='No_votes', ascending=False).iloc[0]
@@ -135,7 +160,7 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
             else:
                 return "Sorry, I can only find the most popular attraction for a specific destination, not an entire country."
         
-        # Rule 4: "Tell me about"
+        # Tell me about
         if "tell me about" in question_lower:
             data_row = entity_data.iloc[0]
             info = f"### Summary for **{entity}**:\n"
@@ -147,7 +172,7 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
             info += f"\n[Read more on Wikipedia]({url})"
             return info
 
-        # Rule 1: Data lookup from the database
+        # Data lookup from the database
         data_keywords = {"hdi": ("HDI_Value_Latest", ".3f"),"safety": ("Safety_Index", ".2f"),"cost of living": ("CostofLivingPlusRentIndex", ".2f"),"purchasing power": ("LocalPurchasingPowerIndex", ".2f"),"unemployment": ("Unemployment_Rate_National_Latest_Pct", ".2f"),"inflation": ("Inflation_Rate_National_Latest_Pct", ".2f"),"life expectancy": ("Life_Expectancy", ".2f"),"cuisine rank": ("Cuisine_Rank", ".0f")}
         for keyword, (col, fmt) in data_keywords.items():
             if keyword in question_lower and col in entity_data.columns:
@@ -162,32 +187,58 @@ def get_chatbot_response(question, dest_data, attr_data, all_destinations, all_c
                         return f"The weather in **{entity}** in {month} is typically **{weather}**."
             return "Please specify a month to get the weather forecast (e.g., 'weather in Paris in July')."
         
-        # Rule 1: Link generation
+        # Link generation
+
         if "flight" in question_lower:
-            url = f"https://www.google.com/flights?q=flights+from+Lodz+to+{entity.replace(' ', '+')}"
+            url = f"https://www.google.com/flights?q=flights+from+Poland+to+{entity.replace(' ', '+')}"
             return f"Sure, here is a link to search for flights to {entity}:\n[Click here for flights]({url})"
         if "hotel" in question_lower:
             url = f"https://www.booking.com/searchresults.html?ss={entity.replace(' ', '+')}"
             return f"Of course, here is a link to search for hotels in {entity}:\n[Click here for hotels]({url})"
-        if "wikipedia" in question_lower:
+        if "wikipedia" in question_lower or "information" in question_lower:
             url = f"https://en.wikipedia.org/wiki/{entity.replace(' ', '_')}"
             return f"Here is the Wikipedia page for {entity}:\n[Read more on Wikipedia]({url})"
             
     # Rule 3: Explanations (checked only if no entity was found)
-    if "how do weights work" in question_lower:
-        return "The weights are like sliders on a DJ's mixing console. A higher weight gives a factor more influence on the final recommendation score, allowing you to tailor the results to what's most important to you."
-    if "how does the model work" in question_lower:
+    if "weights" in question_lower:
+        return "A higher weight gives a factor more influence on the final recommendation score, allowing you to match the results to what's most important to you."
+    if "model" in question_lower:
         return "The model uses a Weighted Scoring System. For each destination, it calculates a score (from 0 to 1) for various factors like weather, budget, and safety. Each score is then multiplied by its user-defined weight. The final score is the sum of all these weighted scores, and the top 10 destinations are recommended."
-    if "what is hdi" in question_lower:
-        return "The **Human Development Index (HDI)** is a summary measure of average achievement in key dimensions of human development: a long and healthy life, being knowledgeable and having a decent standard of living."
-        
-    # Default response
+    if "hdi" in question_lower:
+        return "The Human Development Index (HDI) is a statistical composite index of life expectancy, education, and per capita income indicators, which is used to rank countries into four tiers of human development. It provides a broader measure of development than just economic factors, reflecting the overall quality of life in a country."
+    if "safety" in question_lower:
+        return "Safety Index is a measure of how safe a country or city is for residents and visitors. It takes into account factors like crime rates, political stability, healthcare quality, and emergency services. A higher Safety Index indicates a safer environment."
+    if "cost of living" in question_lower:
+        return "Cost of Living Index measures the relative cost of living in different locations. It includes expenses like housing, food, transportation, healthcare, and entertainment. A lower index means that living in that location is generally more affordable."
+    if "purchasing power" in question_lower:
+        return "Purchasing Power Index indicates how much a local currency can buy in terms of goods and services. It reflects the relative value of money in a specific location, showing how far a salary can go in that area. A higher index means that your money has more purchasing power."
+    if "cuisine rank" in question_lower:
+        return "Cuisine Rank is a measure of the quality and diversity of a destination's food scene. It considers factors like the variety of cuisines available, the number of high-rated restaurants, and the overall culinary experience. A higher rank indicates a more vibrant and appealing food culture."   
+    if "weather" in question_lower:
+        return "In this model, weather is categorized into five types: cold, cool, mild, warm, and hot. Each destination is rated based on its typical weather conditions during different months of the year. This helps match your preferred climate with destinations that are likely to offer that experience."
+    if "attraction" in question_lower or "what are attractions" in question_lower:
+        return "Attractions refer to points of interest that draw visitors to a destination. They can include natural sites like parks and beaches, cultural landmarks like museums and historic sites, entertainment venues like theme parks and theaters, and many other types of places that offer unique experiences."
+    if "distance" in question_lower:
+        return "Distance in this model refers to the road distance from Lodz, Poland to the destination. It is used as a factor to prefer closer destinations, which can be more convenient and cost-effective to travel to."
+    if "known languages" in question_lower:
+        return "Known Languages refers to the languages that you, the user, can speak. If you know the local language of a destination, it gives that destination a significant bonus in its recommendation score, as it can enhance your experience and ease of communication while traveling."    
+    if "attraction quantity" in question_lower:
+        return "Attraction Quantity measures the number of attractions in a destination that match your interests. A higher quantity indicates that there are more options for things to see and do that align with what you enjoy."    
+    if "attraction quality" in question_lower:
+        return "Attraction Quality assesses how highly-rated the attractions in a destination are, based on user reviews and ratings. A higher quality score means that the attractions you are interested in are generally well-regarded and likely to provide a better experience."
+    if "attraction popularity" in question_lower:
+        return "Attraction Popularity indicates how well-known and frequently visited the attractions in a destination are. A higher popularity score means that the destination has famous landmarks and sites that attract many tourists, while a lower score may indicate hidden gems and less crowded places."
+    if "cuisine quality" in question_lower:
+        return "Cuisine Quality evaluates the overall quality of the food scene in a destination, based on factors like restaurant ratings, diversity of culinary options, and local food culture. A higher cuisine quality score suggests that the destination offers a rich and satisfying dining experience."
+ 
+    #Default response
     return "Sorry, I don't understand that question. Try asking 'help' to see what I can do."
 
 def display_recommendations(recommendations_df, all_data_df):
-    """Formats and displays the recommendation dataframe and a map."""
+    #DISPLAYING RECOMMENDATIONS
     if recommendations_df is not None and not recommendations_df.empty:
         col1, col2 = st.columns([4, 3])
+        #LEFT: TABLE, RIGHT: MAP
         with col1:
             st.subheader("Top 10 Recommendations")
             recs_to_display = recommendations_df.copy()
@@ -230,43 +281,40 @@ def display_recommendations(recommendations_df, all_data_df):
 # --- Main App ---
 st.title('Personal Travel Recommender')
 main_df, attr_df = load_data()
+#CHATBOT INTERFACE
+st.sidebar.title("Ask the Travel Bot!")
 if not main_df.empty:
-    st.sidebar.header('Define Your Preferences')
+    st.sidebar.title('Define your preferences!')
     language_options = get_language_list(main_df)
     country_options, destination_options = get_countries_and_destinations(main_df)
     month_options = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    
     mode = st.sidebar.radio("Choose your goal:", ('Vacation', 'Emigration'))
-    
     st.sidebar.subheader("Exclude Places", help="You can exclude entire countries or specific destinations from the recommendations.")
-    excluded_countries = st.sidebar.multiselect('Exclude entire countries:', options=country_options)
-    excluded_destinations_formatted = st.sidebar.multiselect('Exclude specific destinations:', options=destination_options)
+    excluded_countries = st.sidebar.multiselect('STEP 1: Exclude entire countries:', options=country_options)
+    excluded_destinations_formatted = st.sidebar.multiselect('STEP 2: Exclude specific destinations:', options=destination_options)
     excluded_destinations = [d.split(' - ')[-1] for d in excluded_destinations_formatted]
     final_excluded_list = excluded_countries + excluded_destinations
-
     if mode == 'Vacation':
         st.header("Vacation Recommendations")
         with st.sidebar:
             st.subheader("Main Preferences", help="These are the main criteria that will influence the recommendations.")
-            month_pref = st.selectbox('Select month of travel:', options=month_options, index=6, help="The model will search for destinations with the best weather in your chosen month.")
-            weather_pref = st.selectbox('What kind of weather are you looking for?', options=WEATHER_SCALE, index=5, help="Select your ideal weather. Destinations with similar weather will get more points.")
-            budget_pref = st.select_slider('Select your budget:', options=['Budget', 'MidRange', 'Luxury'], value='MidRange', help="This is based on the average daily cost for a tourist, including accommodation, food, and attractions.")
-            
+            month_pref = st.selectbox('STEP 3: Select month of travel:', options=month_options, index=6, help="The model will search for destinations with the best weather in your chosen month.")
+            weather_pref = st.selectbox('STEP 4: Select your dream weather:', options=WEATHER_SCALE, index=5, help="Select your ideal weather. Destinations with similar weather will get more points.")            
             help_text_lines = ["**'everything'**: Considers all attractions, prioritizing destinations with the highest quantity and quality of attractions overall.\n\n**Category Descriptions:**\n"]
             for group, description in ATTRACTION_DESCRIPTIONS.items():
                 help_text_lines.append(f"- **{group.replace('_', ' ')}:** {description}")
             attraction_help_text = "\n".join(help_text_lines)
 
             attraction_pref = st.multiselect(
-                'What types of attractions are you interested in?', 
+                'STEP 5: What types of attractions are you interested in?', 
                 options=['everything'] + ALL_ATTRACTION_GROUPS, 
                 default=['everything'],
                 help=attraction_help_text
             )
             
-            known_languages_pref = st.multiselect('What other languages do you speak?', options=language_options, help="If you know the local language, the destination will receive a significant bonus in its score.")
+            known_languages_pref = st.multiselect('STEP 6: What other languages do you speak?', options=language_options, help="If you know the local language, the destination will receive a significant bonus in its score.")
             
-            with st.expander("Adjust Model Weights"):
+            with st.expander("STEP 7: ADJUST MODEL WEIGHTS", expanded=True):
                 persona = st.selectbox("Load a preset...", options=list(VACATION_PRESETS.keys()), key='vac_persona')
                 weights = VACATION_PRESETS[persona]
                 w_weather = st.slider("Weight: Weather", 0.0, 1.0, weights['weather'], 0.05, key='w_vac_weather', help="Controls the importance of the weather matching your preference.")
@@ -285,7 +333,7 @@ if not main_df.empty:
         if st.button('Find my perfect vacation!'):
             if not attraction_pref: st.sidebar.error("Please select at least one attraction type (or 'everything').")
             else:
-                vacation_preferences = {'month': month_pref,'weather': weather_pref,'budget': budget_pref,'attractions': attraction_pref,'known_languages': known_languages_pref,'excluded_places': final_excluded_list}
+                vacation_preferences = {'month': month_pref,'weather': weather_pref,'attractions': attraction_pref,'known_languages': known_languages_pref,'excluded_places': final_excluded_list}
                 vacation_weights = {'weather': w_weather, 'budget': w_budget, 'attractions_quantity': w_attr_quantity, 'attractions_quality': w_attr_quality, 'safety': w_safety, 'attractions_popularity': w_attr_pop, 'english_level': w_eng_level, 'known_languages': w_known_lang, 'distance': w_distance, 'cuisine_quality': w_cuisine}
                 with st.spinner('Thinking...'):
                     recommendations = get_vacation_recommendations(vacation_preferences, vacation_weights)
@@ -298,9 +346,9 @@ if not main_df.empty:
         st.header("Emigration Recommendations")
         with st.sidebar:
             st.subheader("Main Preferences", help="These are the main criteria that will influence the recommendations for long-term living.")
-            weather_pref_em = st.selectbox('What climate do you prefer year-round?', options=WEATHER_SCALE, index=4, key='weather_em', help="The model rewards destinations that match this climate for the majority of the year.")
-            known_languages_pref_em = st.multiselect('What other languages do you speak?', options=language_options, key='lang_em', help="If you know the local language, the destination will receive a significant bonus in its score.")
-            with st.expander("Adjust Model Weights"):
+            weather_pref_em = st.selectbox('STEP 3: What temperature do you prefer year-round?', options=WEATHER_SCALE, index=4, key='weather_em', help="The model rewards destinations that match this climate for the majority of the year.")
+            known_languages_pref_em = st.multiselect('STEP 4: What other languages do you speak?', options=language_options, key='lang_em', help="If you know the local language, the destination will receive a significant bonus in its score.")
+            with st.expander("STEP 5: Adjust Model Weights"):
                 persona_em = st.selectbox("Load a preset...", options=list(EMIGRATION_PRESETS.keys()), key='em_persona')
                 weights_em = EMIGRATION_PRESETS[persona_em]
                 w_cost_living = st.slider("Weight: Cost of Living", 0.0, 1.0, weights_em['cost_of_living'], 0.05, key='w_em_cost', help="Importance of low cost of living, including rent.")
@@ -330,10 +378,31 @@ if not main_df.empty:
 
     # --- Chatbot Interface ---
     st.markdown("---")
-    st.header("🤖 Travel Assistant Chatbot")
-
+    st.header("Travel Assistant Chatbot")
     if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": "Hello, welcome to Travel Recommender, ask me about a destination, model, flights, whatever you want!. If you are not sure, please type 'help'!"}]
+        st.session_state.messages = [{"role": "assistant", "content": """
+    ### Welcome to the Personal Travel Recommender!
+
+    Here's a quick guide on how to use the application:
+
+    **FIRST STEP. Choose Your Goal in the Sidebar**
+    * **Vacation:** For planning short-term trips. This mode focuses on factors like budget, attractions, and weather for a specific month.
+    * **Emigration:** For evaluating long-term living prospects. This mode uses year-round climate data and focuses on socio-economic factors like cost of living, safety, and purchasing power.
+
+    **NEXT STEPS. Define Your Preferences**
+    * Use the widgets in the sidebar to tell the model what you're looking for. The options will change depending on the goal you've selected.
+
+    **LAST STEP. Fine-Tune the Model**
+    * In the "Adjust Model Weights" section, you can load a preset "persona" (like 'Budget Explorer' or 'The Family') to automatically set the importance of each factor. You can then fine-tune any of the sliders yourself.
+
+    **Get your Recommendations**
+    * Once you're ready, click the "Find..." button to generate your personalized list of the top 10 destinations.
+
+    **Ask Me Anything!**
+    * You can also use me, the chatbot, to ask specific questions like "What is the safety in Berlin?", "Tell me about Rome", or "Show me flights to Paris".
+
+    **Ready to start? Select your goal in the sidebar!**
+    """}]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):

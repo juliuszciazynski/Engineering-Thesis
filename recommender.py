@@ -3,18 +3,19 @@ import sqlite3
 import re
 
 
-#constants
-#VACATION -> WEATHER
+
+
+#SCALE FOR WEATHER PREFERENCE  
 WEATHER_SCALE = ['freezing', 'very cold', 'cold', 'cool', 'comfortable', 'warm', 'hot', 'sweltering'] 
-#VACATION -> ATTRACTIONS QUALITY/QUANTITY/POPULARITY
+#ATTRACTION GROUPS
 ALL_ATTRACTION_GROUPS = [
     'Historic_Heritage', 'Religion', 'Nature_Recreation', 'Culture_Art', 'Museums',
     'Entertainment_Leisure', 'Shopping_Urban', 'Food_Drink', 'Winter_Sports',
     'Scenic_Transport', 'Science_Technology', 'Beach', 'Mountains_and_trails',
-    'Landmark'
+    'Landmark', 'Top_200_Popular'
 ]
 
-#ATTRACTIONS POPULARITY
+#POPULARITY SCORE FUNCTION
 def calculate_attraction_popularity_score(rank, max_rank):
     """Non-linear function for scoring attraction popularity."""
     if pd.isna(rank): return 0.0
@@ -39,7 +40,7 @@ def calculate_cuisine_score(rank, max_rank=100):
     return score
 
 
-#VACATION CALCULATION
+#VACATION RECOMMENDATION
 def get_vacation_recommendations(preferences, weights, top_n=10):
     #CONNECTING TO TRAVEL_RECOMMENDATION DATABASE
     try:
@@ -59,7 +60,7 @@ def get_vacation_recommendations(preferences, weights, top_n=10):
     attr_grouped = df_attr.groupby('Destination').sum()
     df = pd.merge(df_dest, attr_grouped, on='Destination', how='left')
     
-    #USER CAN EXCLUDE PLACES IF THEY WANT TO 
+    #EXCLUDING PLACES
     excluded_places = preferences.get('excluded_places', [])
     if excluded_places:
         excluded_lower = [place.lower() for place in excluded_places]
@@ -87,12 +88,10 @@ def get_vacation_recommendations(preferences, weights, top_n=10):
         weather_score = df[month_col].apply(score_weather)
         df['score'] += weights['weather'] * weather_score.fillna(0)
 
-    #2. BUDGET: I FOUND DATA WITH THREE DIFFERENT CATEGORIES OF BUDGET: BUDGET, MIDRANGE AND LUXURY, however, the difference between them is not so big
-    #EVERY DESTINATION HAS THREE CATEGORIES 
+    #2. BUDGET: SIMPLIFIED TO USE ONLY MIDRANGE COST
     #NORMALISATION (CHEAPEST PLACE = 1, MOST EXPENSIVE = 0)
-    cost_col_map = {'Budget': 'Overall_Daily_Cost_Budget_USD', 'MidRange': 'Overall_Daily_Cost_MidRange_USD', 'Luxury': 'Overall_Daily_Cost_Luxury_USD'}
-    cost_col = cost_col_map.get(preferences.get('budget'))
-    if cost_col and cost_col in df.columns and df[cost_col].max() > 0 and weights.get('budget', 0) > 0:
+    cost_col = 'Overall_Daily_Cost_MidRange_USD' # Hardcoded to MidRange
+    if cost_col in df.columns and df[cost_col].max() > 0 and weights.get('budget', 0) > 0:
         cost_normalized = (df[cost_col] - df[cost_col].min()) / (df[cost_col].max() - df[cost_col].min())
         budget_score = 1 - cost_normalized
         df['score'] += weights['budget'] * budget_score.fillna(0)
@@ -103,7 +102,7 @@ def get_vacation_recommendations(preferences, weights, top_n=10):
     user_attractions = preferences.get('attractions', [])
     #USER CAN CHOOSE EVERYTHING
     attractions_to_score = ALL_ATTRACTION_GROUPS if (user_attractions and user_attractions[0].lower() == 'everything') else user_attractions
-    
+
     if attractions_to_score:
         valid_attractions = [attr for attr in attractions_to_score if attr in df.columns]
         if valid_attractions:
@@ -267,9 +266,9 @@ def get_emigration_recommendations(preferences, weights, top_n=10):
     
     return results[display_cols].head(top_n)
 
-#MAIN FUNCTION
+#MAIN PROGRAM
 if __name__ == "__main__":
-    #CHOOSING VACATION OR EMIGRATION
+    #USER CHOOSES MODE
     choice = input("Choose recommendation mode ('vacation' or 'emigration'): ").lower().strip()
 
     if choice == 'vacation':
@@ -278,16 +277,15 @@ if __name__ == "__main__":
         vacation_preferences = {
             'month': 'July',
             'weather': 'warm',
-            'budget': 'MidRange',
-            'attractions': ['Nature_Recreation', 'Beach'],
+            'attractions': ['Top_200_Popular'],
             'known_languages': [],
             'excluded_places': ['Poland']
         }
         #USER ASSIGNS WEIGHTS TO ALL CATEGORIES
         vacation_weights = {
-            'weather': 1, 'budget': 1, 'attractions_quantity': 1, 'attractions_quality': 1,
-            'safety': 1, 'attractions_popularity': 1, 'english_level': 1, 'known_languages': 0.0,
-            'distance': 0, 'cuisine_quality': 1
+            'weather': 0, 'budget': 1, 'attractions_quantity': 0, 'attractions_quality': 0,
+            'safety': 0, 'attractions_popularity': 0, 'english_level': 0, 'known_languages': 0.0,
+            'distance': 0, 'cuisine_quality': 0
         }
         
         recommendations = get_vacation_recommendations(vacation_preferences, vacation_weights)
@@ -295,16 +293,16 @@ if __name__ == "__main__":
             print("\n--- Top 10 Vacation Recommendations ---")
             recommendations.rename(columns={'Country_x': 'Country'}, inplace=True)
             print(recommendations.to_string(index=False))
-    #SAME FOR EMMIGRATION
+    #USER CAN CHOOSE EMIGRATION MODE
     elif choice == 'emigration':
         print("\n" + "="*50); print(" RUNNING EMIGRATION MODE ".center(50, "=")); print("="*50)
-        #HERE, ONLY EXCLUDED PLACES, KNOWN LANGUAGES AND WEATHER
+        #USER CAN EXCLUDE COUNTRIES OR DESTINATIONS, LIST KNOWN LANGUAGES, AND PREFERRED WEATHER
         emigration_preferences = {
             'excluded_places': [],
             'known_languages': [],
             'weather': 'comfortable'
         }
-        #WEIGHTS, AS BEFORE
+        #USER ASSIGNS WEIGHTS TO ALL CATEGORIES
         emigration_weights = {
             'cost_of_living': 0.20, 'purchasing_power': 0.20, 'safety': 0.10,
             'english_level': 0.10, 'hdi': 0.10, 'unemployment': 0.10,

@@ -10,8 +10,7 @@ file_country_stats = "destinations_important_14_07_wersja_python_1.xlsx - Countr
 file_dest_stats = "destinations_important_14_07_wersja_python_1.xlsx - Destination_Statistics.csv"
 file_attractions = "destinations_important_14_07_wersja_python_1.xlsx - Attractions.csv"
 db_name = "travel_recommendation_final.db"
-
-##PROBABLY USELESS, CHECK AND DELETE LATER
+#DEFINING POPULARITY THRESHOLD
 try:
     temp_df = pd.read_csv(file_attractions, encoding='latin-1', sep=';', usecols=['No_votes'])
     TOP_200_THRESHOLD = temp_df['No_votes'].nlargest(200).min()
@@ -20,7 +19,7 @@ except Exception as e:
     print(f"Could not determine popularity threshold, using default value. Error: {e}")
     TOP_200_THRESHOLD = 14000
 
-#MAPPING CATEGORIES
+#MAPPING CATEGORIES 
 definitive_mapping = {
     'Points of Interest': ['Landmark'], 'Landmarks': ['Landmark'], 'Speciality Museums': ['Museums'],
     'Historic Sites': ['Historic_Heritage'], 'Beaches': ['Beach', 'Nature_Recreation'],
@@ -81,8 +80,7 @@ definitive_mapping = {
     'Other Outdoor Activities': ['Nature_Recreation', 'Entertainment_Leisure'], 'Shuttles': ['Scenic_Transport'],
     'Speciality & Gift Shops': ['Shopping_Urban'], 'Taxis': ['Scenic_Transport'], 'Points of I': ['Landmark']
 }
-
-#LOADING CLEANING DATA, DATA PREPROCESSING
+#DATA LOADING AND BASIC CLEANING
 try:
     print("Loading CSV files...")
     df_dest_countries = pd.read_csv(file_dest_countries, encoding='latin-1', sep=';')
@@ -90,23 +88,19 @@ try:
     df_dest_stats = pd.read_csv(file_dest_stats, encoding='latin-1', sep=';')
     df_attractions = pd.read_csv(file_attractions, encoding='latin-1', sep=';')
     print("Files loaded successfully.")
-
-    ##PROBABLY USELESS, CHECK AND DELETE LATER
     def clean_name_func(name):
         return str(name).strip().replace('Finlandia', 'Finland').replace('Czech Republic', 'Czechia')
-    ##PROBABLY USELESS, CHECK AND DELETE LATER
     for df in [df_dest_countries, df_country_stats, df_dest_stats, df_attractions]:
         for col in ['Destination', 'Country']:
             if col in df.columns:
                 df[col] = df[col].apply(clean_name_func)
-    ###PROBABLY USELESS, CHECK AND DELETE LATER
     popularity_counts = df_attractions.groupby('Destination')['No_votes'].sum().reset_index()
     popularity_counts.rename(columns={'No_votes': 'Popularity_TripAdvisor_Count'}, inplace=True)
 except Exception as e:
     print(f"Error during loading or basic data cleaning: {e}")
     exit()
 
-#ATTRACTION TYPES
+#ATTRACTION TYPES, all categories from 'Attraction type' column will be grouped into final categories
 print("Grouping attraction categories...")
 final_group_columns = [
     'Historic_Heritage', 'Religion', 'Nature_Recreation', 'Culture_Art', 'Museums',
@@ -115,10 +109,9 @@ final_group_columns = [
     'Landmark', 'Top_200_Popular'
 ]
 grouped_features = pd.DataFrame(0, index=df_attractions.index, columns=final_group_columns)
-#SHOULD BE NOTHING, SO POSSIBLY DELETE IT
 df_attractions.dropna(subset=['Attraction type'], inplace=True)
 df_attractions['Attraction type'] = df_attractions['Attraction type'].astype(str)
-
+#PROCESSING EACH ROW
 for index, row in df_attractions.iterrows():
     if row['Attraction type'] == '#N/A':
         continue
@@ -133,11 +126,11 @@ for index, row in df_attractions.iterrows():
             for group in groups_to_assign:
                 if group in grouped_features.columns:
                     grouped_features.loc[index, group] = 1
-##PROBABLY USELESS, CHECK AND DELETE LATER
+
 print("Applying popularity rule for 'Top_200_Popular'...")
 landmark_indices = df_attractions[df_attractions['No_votes'] >= TOP_200_THRESHOLD].index
 grouped_features.loc[landmark_indices, 'Top_200_Popular'] = 1
-##PROBABLY USELESS, CHECK AND DELETE LATER
+
 df_attractions_processed = pd.concat([df_attractions.drop('Attraction type', axis=1), grouped_features], axis=1)
 print("Grouping finished.")
 
@@ -155,7 +148,7 @@ def make_sql_safe_col_names(df_to_clean):
 
 df_main_destinations = make_sql_safe_col_names(df_main_destinations)
 df_attractions_processed_safe = make_sql_safe_col_names(df_attractions_processed.copy())
-
+#SAVING TO DATABASE AND CSV
 try:
     print(f"Saving data to database: {db_name}...")
     conn = sqlite3.connect(db_name)
